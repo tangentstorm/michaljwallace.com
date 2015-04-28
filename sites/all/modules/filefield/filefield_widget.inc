@@ -1,5 +1,4 @@
 <?php
-// $Id: filefield_widget.inc,v 1.105 2010/12/08 21:57:49 quicksketch Exp $
 
 /**
  * @file
@@ -235,11 +234,12 @@ function filefield_widget_value($element, $edit = FALSE) {
     }
 
     // Load file if the FID has changed so that it can be saved by CCK.
-    $file = field_file_load($item['fid']);
+    $file = isset($item['fid']) ? field_file_load($item['fid']) : NULL;
 
     // If the file entry doesn't exist, don't save anything.
     if (empty($file)) {
       $item = array();
+      $file = array();
     }
 
     // Checkboxes loose their value when empty.
@@ -381,10 +381,18 @@ function filefield_widget_process($element, $edit, &$form_state, $form) {
   );
 
   if ($item['fid'] != 0) {
-    $element['preview'] = array(
-      '#type' => 'markup',
-      '#value' => theme('filefield_widget_preview', $item),
-    );
+    if (function_exists('file_download_access') && $item['status'] && !file_download_access($item['filepath'])) {
+      $element['preview'] = array(
+        '#type' => 'markup',
+        '#value' => t('Access denied'),
+      );
+    }
+    else {
+      $element['preview'] = array(
+        '#type' => 'markup',
+        '#value' => theme('filefield_widget_preview', $item),
+      );
+    }
   }
 
   // Grant access to temporary files.
@@ -458,7 +466,7 @@ function filefield_widget_validate(&$element, &$form_state) {
     if ($file = field_file_load($element['fid']['#value'])) {
       $file = (object) $file;
       if ($file->status == FILE_STATUS_PERMANENT) {
-        if (field_file_references($file) == 0) {
+        if (field_file_references($file) == 0 || (function_exists('file_download_access') && !file_download_access($file->filepath))) {
           form_error($element, t('Referencing to the file used in the %field field is not allowed.', array('%field' => $element['#title'])));
         }
       }
@@ -479,7 +487,7 @@ function theme_filefield_widget($element) {
 
 function theme_filefield_widget_preview($item) {
   // Remove the current description so that we get the filename as the link.
-  if (isset($item['data']['description'])) {
+  if (isset($item['data']) && is_array($item['data']) && isset($item['data']['description'])) {
     unset($item['data']['description']);
   }
 
@@ -560,14 +568,14 @@ function filefield_node_form_validate($form, &$form_state) {
       }
     }
 
-    if (!$valid && $field['required'] && filefield_edit_access($field['type_name'], $field_name)) {
-      form_set_error($field_name, t('%title field is required.', array('%title' => $field['widget']['label'])));
+    if (!$valid && $field['required'] && filefield_edit_access($field['type_name'], $field_name, $form['#node'])) {
+      form_set_error($field_name, t('%title field is required.', array('%title' => t($field['widget']['label']))));
     }
     $max_filesize = parse_size($field['widget']['max_filesize_per_node']);
     if ($max_filesize && $total_filesize > $max_filesize) {
       form_set_error($field_name, t('Total filesize for %title, %tsize, exceeds field settings of %msize.',
                                     array(
-                                      '%title' => $field['widget']['label'],
+                                      '%title' => t($field['widget']['label']),
                                       '%tsize' => format_size($total_filesize),
                                       '%msize' => format_size($max_filesize)
                                     )

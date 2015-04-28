@@ -1,4 +1,3 @@
-// $Id: filefield.js,v 1.28 2010/12/08 21:08:25 quicksketch Exp $
 
 /**
  * Auto-attach standard client side file input validation.
@@ -62,7 +61,7 @@ Drupal.filefield = {
         var error = Drupal.t("The selected file %filename cannot be uploaded. Only files with the following extensions are allowed: %extensions.",
           { '%filename' : this.value, '%extensions' : extensions.replace(/\|/g, ', ') }
         );
-        $(this).before('<div class="messages error file-upload-js-error">' + error + '</div>');
+        $(this).parent().before('<div class="messages error file-upload-js-error">' + error + '</div>');
         this.value = '';
         return false;
       }
@@ -96,7 +95,7 @@ Drupal.filefield = {
     // the filefields after the AHAH process is complete even though it only
     // has a 1 millisecond timeout.
     setTimeout(function(){
-      $disabledFields.attr('disabled', '');
+      $disabledFields.removeAttr('disabled');
     }, 1000);
   },
   progressBar: function(event) {

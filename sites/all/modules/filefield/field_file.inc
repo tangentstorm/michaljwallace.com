@@ -1,7 +1,5 @@
 <?php
-// $Id: field_file.inc,v 1.40 2010/12/12 23:36:07 quicksketch Exp $
-
-/**
+ /**
  * @file
  * Common functionality for file handling CCK field modules.
  */
